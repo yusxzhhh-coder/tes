@@ -1,558 +1,348 @@
---=====================================================================
---  SKYZOX SCRBX | Break & Steal An Egg | UI v4.0 ULTRA FULL FEATURE
---  Executor: Krnl / Wave / Delta / Synapse X / Fluxus / Codex
---  Semua fitur toggle langsung aktif. Config save/load ke file.
---=====================================================================
+-- SKYZOX SCRBX — MONOCHROME ANIMATED UI v2
+-- Fitur mandiri: Speed, Noclip, Anti-AFK, Info Panel
+-- Placeholder: Auto Break, Auto Steal, Safe Zone, Anti Security
 
-local Players            = game:GetService("Players")
-local RunService         = game:GetService("RunService")
-local TweenService       = game:GetService("TweenService")
-local Workspace          = game:GetService("Workspace")
-local UserInputService   = game:GetService("UserInputService")
-local CoreGui            = game:GetService("CoreGui")
-local Lighting           = game:GetService("Lighting")
-local StarterGui         = game:GetService("StarterGui")
-local HttpService        = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 
-local LP  = Players.LocalPlayer
-local Char = LP.Character or LP.CharacterAdded:Wait()
-local HRP  = Char:WaitForChild("HumanoidRootPart")
-local Hum  = Char:WaitForChild("Humanoid")
-
---================= CONFIG =================
-local CFG = {
-    AutoBreak        = false,
-    AutoCollect      = false,
-    AutoSafeZone     = false,
-    AntiSecurity     = false,
-    AutoSell         = false,
-    AutoHatch        = false,
-    AutoRebirth      = false,
-    AutoQuest        = false,
-    AutoDaily        = false,
-    AutoRedeem       = false,
-    AutoClaimGift    = false,
-    AntiAFK          = false,
-    Speed            = false,
-    SpeedValue       = 60,
-    JumpPower        = false,
-    JumpValue        = 120,
-    InfiniteJump     = false,
-    NoFall           = false,
-    Noclip           = false,
-    Fly              = false,
-    FlySpeed         = 50,
-    ESP              = false,
-    ESPColor         = Color3.fromRGB(255, 255, 0),
-    HitboxExtender   = false,
-    HitboxSize       = 8,
-    Fullbright       = false,
-    RemoveFog        = false,
-    FPSBoost         = false,
-    SafeZoneCFrame   = CFrame.new(0, 200, 0),
-    BreakRadius      = 30,
-    CollectRadius    = 80,
-    SelectedEgg      = "",
+-- ================= THEME =================
+local C = {
+    Black   = Color3.fromRGB(0, 0, 0),
+    Dark    = Color3.fromRGB(12, 12, 12),
+    Panel   = Color3.fromRGB(22, 22, 22),
+    Line    = Color3.fromRGB(55, 55, 55),
+    White   = Color3.fromRGB(240, 240, 240),
+    Gray    = Color3.fromRGB(140, 140, 140),
+    Dim     = Color3.fromRGB(80, 80, 80),
 }
---==========================================
+local FONT      = Enum.Font.Gotham
+local FONT_BOLD = Enum.Font.GothamBold
+local FONT_MED  = Enum.Font.GothamMedium
 
---================= UTIL ===================
-local function notify(txt)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "SKYZOX v4.0",
-            Text  = txt,
-            Duration = 3,
-        })
-    end)
-    print("[SKYZOX]", txt)
-end
+-- ================= HELPERS =================
+local function corner(o, r) local c=Instance.new("UICorner"); c.CornerRadius=UDim.new(0,r or 6); c.Parent=o; return c end
+local function stroke(o, col, th, tr) local s=Instance.new("UIStroke"); s.Color=col or C.Line; s.Thickness=th or 1; s.Transparency=tr or 0.5; s.Parent=o; return s end
+local function tw(o, t, p) TweenService:Create(o, TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), p):Play() end
 
-local function tp(cf)
-    if HRP then
-        HRP.CFrame = cf
+-- ================= ROOT =================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "SCRBX_Mono_v2"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 999
+Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ================= SPLASH =================
+local Splash = Instance.new("Frame")
+Splash.Size = UDim2.fromScale(1,1)
+Splash.BackgroundColor3 = C.Black
+Splash.BorderSizePixel = 0
+Splash.ZIndex = 50
+Splash.Parent = Gui
+local ST = Instance.new("TextLabel")
+ST.Size = UDim2.fromScale(1,1); ST.BackgroundTransparency = 1
+ST.Text = "S K Y Z O X"; ST.TextColor3 = C.White
+ST.Font = FONT_BOLD; ST.TextSize = 26; ST.TextTransparency = 1; ST.ZIndex = 51
+ST.Parent = Splash
+tw(ST, 0.5, {TextTransparency = 0})
+task.delay(0.7, function()
+    tw(ST, 0.4, {TextTransparency = 1})
+    tw(Splash, 0.5, {BackgroundTransparency = 1})
+    task.delay(0.6, function() Splash:Destroy() end)
+end)
+
+-- ================= WINDOW =================
+local Win = Instance.new("Frame")
+Win.Size = UDim2.fromOffset(560, 420)
+Win.Position = UDim2.new(0.5, -280, 0.5, -210)
+Win.BackgroundColor3 = C.Dark
+Win.BorderSizePixel = 0
+Win.Active = true; Win.Draggable = true
+Win.ClipsDescendants = true
+Win.Parent = Gui
+corner(Win, 10)
+stroke(Win, C.Line, 1, 0.3)
+Win.Size = UDim2.fromOffset(0,0)
+task.spawn(function() tw(Win, 0.35, {Size = UDim2.fromOffset(560,420)}) end)
+
+-- ================= TITLE BAR =================
+local Bar = Instance.new("Frame")
+Bar.Size = UDim2.new(1,0,0,44)
+Bar.BackgroundColor3 = C.Black
+Bar.BorderSizePixel = 0
+Bar.Parent = Win
+corner(Bar, 10)
+
+local Line = Instance.new("Frame")
+Line.Size = UDim2.new(1,0,0,1)
+Line.Position = UDim2.new(0,0,1,-1)
+Line.BackgroundColor3 = C.White
+Line.BorderSizePixel = 0
+Line.Parent = Bar
+task.spawn(function()
+    while Line.Parent do
+        tw(Line, 1.2, {BackgroundTransparency = 0.7}); task.wait(1.2)
+        tw(Line, 1.2, {BackgroundTransparency = 0}); task.wait(1.2)
     end
-end
---==========================================
-
---================= CLEANUP =================
-if CoreGui:FindFirstChild("SKYZOX_UI") then
-    CoreGui:FindFirstChild("SKYZOX_UI"):Destroy()
-end
---==========================================
-
---================= GUI ====================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SKYZOX_UI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
-
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 340, 0, 480)
-Main.Position = UDim2.new(0, 20, 0, 20)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Main.Parent = ScreenGui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
-local stroke = Instance.new("UIStroke", Main)
-stroke.Color = Color3.fromRGB(130, 60, 230)
-stroke.Thickness = 1.5
-
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 44)
-TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 34)
-TopBar.Parent = Main
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 12)
+end)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -80, 1, 0)
-Title.Position = UDim2.new(0, 14, 0, 0)
+Title.Size = UDim2.new(1,-90,1,0); Title.Position = UDim2.fromOffset(16,0)
 Title.BackgroundTransparency = 1
-Title.Text = "SKYZOX | Break & Steal Egg v4.0"
-Title.TextColor3 = Color3.fromRGB(190, 150, 255)
+Title.Text = "S K Y Z O X   ·   S C R B X   ·   O W N E R"
+Title.TextColor3 = C.White; Title.Font = FONT_BOLD; Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
-Title.Parent = TopBar
+Title.Parent = Bar
 
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 28, 0, 28)
-CloseBtn.Position = UDim2.new(1, -36, 0, 8)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 70)
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = TopBar
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
-
-local Scrolling = Instance.new("ScrollingFrame")
-Scrolling.Size = UDim2.new(1, -16, 1, -56)
-Scrolling.Position = UDim2.new(0, 8, 0, 48)
-Scrolling.BackgroundTransparency = 1
-Scrolling.BorderSizePixel = 0
-Scrolling.ScrollBarThickness = 4
-Scrolling.ScrollBarImageColor3 = Color3.fromRGB(130, 60, 230)
-Scrolling.Parent = Main
-local UIL = Instance.new("UIListLayout", Scrolling)
-UIL.Padding = UDim.new(0, 5)
-local UIP = Instance.new("UIPadding", Scrolling)
-UIP.PaddingTop = UDim.new(0, 4)
-
-local function updateCanvas()
-    Scrolling.CanvasSize = UDim2.new(0, 0, 0, UIL.AbsoluteContentSize.Y + 10)
-end
-UIL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
-
-local function makeSection(text)
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -8, 0, 22)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = "▸ " .. text
-    lbl.TextColor3 = Color3.fromRGB(150, 150, 160)
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 11
-    lbl.Parent = Scrolling
-    updateCanvas()
-end
-
-local function makeToggle(name, key, callback)
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, -8, 0, 32)
-    Btn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-    Btn.Text = "   " .. name
-    Btn.TextColor3 = Color3.fromRGB(210, 210, 220)
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
-    Btn.Font = Enum.Font.GothamMedium
-    Btn.TextSize = 12
-    Btn.Parent = Scrolling
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-
-    local Indicator = Instance.new("Frame")
-    Indicator.Size = UDim2.new(0, 14, 0, 14)
-    Indicator.Position = UDim2.new(1, -22, 0.5, -7)
-    Indicator.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
-    Indicator.Parent = Btn
-    Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
-
-    local state = CFG[key] or false
-    Indicator.BackgroundColor3 = state and Color3.fromRGB(130, 60, 230) or Color3.fromRGB(80, 80, 100)
-
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        CFG[key] = state
-        Indicator.BackgroundColor3 = state and Color3.fromRGB(130, 60, 230) or Color3.fromRGB(80, 80, 100)
-        if callback then callback(state) end
-    end)
-    updateCanvas()
-end
-
-local function makeButton(name, callback)
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, -8, 0, 30)
-    Btn.BackgroundColor3 = Color3.fromRGB(60, 40, 100)
-    Btn.Text = "   " .. name
-    Btn.TextColor3 = Color3.fromRGB(240, 240, 255)
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
-    Btn.Font = Enum.Font.GothamMedium
-    Btn.TextSize = 12
-    Btn.Parent = Scrolling
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-    Btn.MouseButton1Click:Connect(callback)
-    updateCanvas()
-end
-
-local function makeSlider(name, key, min, max, default, callback)
-    local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, -8, 0, 48)
-    Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-    Frame.Parent = Scrolling
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
-    local Lbl = Instance.new("TextLabel")
-    Lbl.Size = UDim2.new(1, -16, 0, 20)
-    Lbl.Position = UDim2.new(0, 8, 0, 4)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Text = name .. ": " .. default
-    Lbl.TextColor3 = Color3.fromRGB(210, 210, 220)
-    Lbl.TextXAlignment = Enum.TextXAlignment.Left
-    Lbl.Font = Enum.Font.GothamMedium
-    Lbl.TextSize = 12
-    Lbl.Parent = Frame
-
-    local Bar = Instance.new("Frame")
-    Bar.Size = UDim2.new(1, -16, 0, 6)
-    Bar.Position = UDim2.new(0, 8, 0, 30)
-    Bar.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-    Bar.Parent = Frame
-    Instance.new("UICorner", Bar).CornerRadius = UDim.new(1, 0)
-
-    local Fill = Instance.new("Frame")
-    Fill.Size = UDim2.new(0.5, 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(130, 60, 230)
-    Fill.Parent = Bar
-    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-    local dragging = false
-    Bar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local mouse = UserInputService:GetMouseLocation()
-            local rel = math.clamp((mouse.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
-            Fill.Size = UDim2.new(rel, 0, 1, 0)
-            local val = math.floor(min + (max - min) * rel)
-            Lbl.Text = name .. ": " .. val
-            CFG[key] = val
-            if callback then callback(val) end
-        end
-    end)
-    updateCanvas()
-end
---==========================================
-
---================= SECTIONS =================
-makeSection("EGG / PET FARMING")
-makeToggle("Auto Break Egg",      "AutoBreak")
-makeToggle("Auto Collect Egg/Pet","AutoCollect")
-makeToggle("Auto Safe Zone TP",   "AutoSafeZone")
-makeToggle("Anti Security",       "AntiSecurity")
-makeToggle("Auto Hatch Egg",      "AutoHatch")
-makeToggle("Auto Sell Pet",       "AutoSell")
-
-makeSection("PROGRESSION")
-makeToggle("Auto Rebirth",        "AutoRebirth")
-makeToggle("Auto Quest",          "AutoQuest")
-makeToggle("Auto Daily",          "AutoDaily")
-makeToggle("Auto Redeem Code",    "AutoRedeem")
-makeToggle("Auto Claim Gift",     "AutoClaimGift")
-makeToggle("Anti AFK",            "AntiAFK")
-
-makeSection("MOVEMENT")
-makeToggle("Speed Hack",          "Speed")
-makeToggle("Jump Power",          "JumpPower")
-makeToggle("Infinite Jump",       "InfiniteJump")
-makeToggle("No Fall",             "NoFall")
-makeToggle("Noclip",              "Noclip")
-makeToggle("Fly",                 "Fly")
-
-makeSection("VISUAL / ESP")
-makeToggle("ESP Egg & Pet",       "ESP")
-makeToggle("Hitbox Extender",     "HitboxExtender")
-makeToggle("Fullbright",          "Fullbright")
-makeToggle("Remove Fog",          "RemoveFog")
-makeToggle("FPS Boost",           "FPSBoost")
-
-makeSection("SLIDERS")
-makeSlider("WalkSpeed",  "SpeedValue",  16, 300, 60)
-makeSlider("JumpPower",  "JumpValue",  50, 400, 120)
-makeSlider("FlySpeed",   "FlySpeed",   20, 300, 50)
-makeSlider("HitboxSize", "HitboxSize", 4, 30, 8)
-
-makeSection("TOOLS")
-makeButton("Teleport Ke Safe Zone", function()
-    tp(CFG.SafeZoneCFrame)
-    notify("Teleport ke safe zone.")
-end)
-makeButton("Teleport Ke Egg Terdekat", function()
-    local best, bestD = nil, math.huge
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj.Name:lower():find("egg") and obj:IsA("BasePart") then
-            local d = (obj.Position - HRP.Position).Magnitude
-            if d < bestD then best, bestD = obj, d end
-        end
-    end
-    if best then tp(best.CFrame + Vector3.new(0, 4, 0)) notify("Teleport ke egg terdekat.") end
-end)
-makeButton("Simpan Config", function()
-    local ok, err = pcall(function()
-        writefile("SKYZOX_config.json", HttpService:JSONEncode(CFG))
-    end)
-    notify(ok and "Config disimpan." or ("Gagal simpan: " .. tostring(err)))
-end)
-makeButton("Muat Config", function()
-    local ok, data = pcall(function()
-        return HttpService:JSONDecode(readfile("SKYZOX_config.json"))
-    end)
-    if ok and data then
-        for k, v in pairs(data) do
-            if CFG[k] ~= nil then CFG[k] = v end
-        end
-        notify("Config dimuat (sebagian toggle perlu diklik ulang).")
-    else
-        notify("File config tidak ditemukan.")
-    end
-end)
-makeButton("Reset Karakter", function()
-    Char:BreakJoints()
-    LP.CharacterAdded:Wait()
-    notify("Karakter direset.")
-end)
---==========================================
-
---================= LOGIC ===================
--- ref karakter baru
-LP.CharacterAdded:Connect(function(c)
-    Char = c
-    HRP = c:WaitForChild("HumanoidRootPart")
-    Hum = c:WaitForChild("Humanoid")
-end)
-
--- Movement
-RunService.Heartbeat:Connect(function()
-    if Hum then
-        Hum.WalkSpeed = CFG.Speed and CFG.SpeedValue or 16
-        Hum.JumpPower = CFG.JumpPower and CFG.JumpValue or 50
-        if CFG.NoFall then Hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, false) end
-    end
-end)
-
--- Noclip
-RunService.Stepped:Connect(function()
-    if CFG.Noclip and Char then
-        for _, v in pairs(Char:GetDescendants()) do
-            if v:IsA("BasePart") then v.CanCollide = false end
-        end
-    end
-end)
-
--- Infinite Jump
-UserInputService.JumpRequest:Connect(function()
-    if CFG.InfiniteJump and Hum then
-        Hum:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- Fly
-local flyBV, flyBG
-RunService.RenderStepped:Connect(function()
-    if CFG.Fly then
-        if not flyBV and HRP then
-            flyBV = Instance.new("BodyVelocity", HRP)
-            flyBV.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            flyBG = Instance.new("BodyGyro", HRP)
-            flyBG.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
-            flyBG.P = 1000
-            flyBG.D = 50
-        end
-        if flyBV and flyBG then
-            local cam = Workspace.CurrentCamera
-            local move = Vector3.zero
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0,1,0) end
-            flyBV.Velocity = move * CFG.FlySpeed
-            flyBG.CFrame = cam.CFrame
-        end
-    else
-        if flyBV then flyBV:Destroy(); flyBV = nil end
-        if flyBG then flyBG:Destroy(); flyBG = nil end
-    end
-end)
-
--- Auto Break / Collect
-RunService.Heartbeat:Connect(function()
-    if not HRP then return end
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        local n = obj.Name:lower()
-        local base = nil
-        if obj:IsA("BasePart") then base = obj
-        elseif obj:IsA("Model") and obj.PrimaryPart then base = obj.PrimaryPart end
-        if not base then continue end
-        local dist = (base.Position - HRP.Position).Magnitude
-
-        if CFG.AutoBreak and n:find("egg") and dist <= CFG.BreakRadius then
-            pcall(function() if firetouchinterest then firetouchinterest(HRP, base, 0); firetouchinterest(HRP, base, 1) end end)
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-            pcall(function() local p = base:FindFirstChildWhichIsA("ProximityPrompt"); if p then fireproximityprompt(p) end end)
-        end
-
-        if CFG.AutoCollect and (n:find("egg") or n:find("pet") or n:find("animal")) and dist <= CFG.CollectRadius then
-            pcall(function() if firetouchinterest then firetouchinterest(HRP, base, 0); firetouchinterest(HRP, base, 1) end end)
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-
-        if CFG.AutoSell and n:find("sell") and dist <= 50 then
-            pcall(function() if firetouchinterest then firetouchinterest(HRP, base, 0); firetouchinterest(HRP, base, 1) end end)
-        end
-
-        if CFG.AutoHatch and (n:find("hatch") or n:find("incubator")) and dist <= 50 then
-            pcall(function() if firetouchinterest then firetouchinterest(HRP, base, 0); firetouchinterest(HRP, base, 1) end end)
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-
-        if CFG.AutoRebirth and (n:find("rebirth") or n:find("prestige")) and dist <= 50 then
-            pcall(function() if firetouchinterest then firetouchinterest(HRP, base, 0); firetouchinterest(HRP, base, 1) end end)
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-
-        if CFG.AutoQuest and (n:find("quest") or n:find("mission")) and dist <= 50 then
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-
-        if CFG.AutoDaily and (n:find("daily") or n:find("login")) and dist <= 50 then
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-
-        if CFG.AutoRedeem and n:find("redeem") and dist <= 50 then
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-
-        if CFG.AutoClaimGift and n:find("gift") and dist <= 50 then
-            pcall(function() local c = base:FindFirstChildWhichIsA("ClickDetector"); if c then fireclickdetector(c) end end)
-        end
-    end
-end)
-
--- Safe Zone / Anti Security
-RunService.Heartbeat:Connect(function()
-    if CFG.AutoSafeZone and HRP then
-        pcall(function() HRP.CFrame = CFG.SafeZoneCFrame end)
-    end
-    if CFG.AntiSecurity then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            local n = obj.Name:lower()
-            if (n:find("security") or n:find("guard") or n:find("police")) and obj:IsA("Model") then
-                for _, p in pairs(obj:GetDescendants()) do
-                    if p:IsA("BasePart") then p.CanCollide = false end
-                end
-            end
-        end
-    end
-end)
-
--- Anti AFK
+local Dot = Instance.new("Frame")
+Dot.Size = UDim2.fromOffset(8,8); Dot.Position = UDim2.new(1,-64,0.5,-4)
+Dot.BackgroundColor3 = C.White; Dot.BorderSizePixel = 0
+Dot.Parent = Bar; corner(Dot, 4)
 task.spawn(function()
-    while true do
-        task.wait(60)
-        if CFG.AntiAFK and VirtualUser then
-            pcall(function() VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end)
-        end
+    while Dot.Parent do
+        tw(Dot, 0.8, {BackgroundTransparency = 0.7}); task.wait(0.8)
+        tw(Dot, 0.8, {BackgroundTransparency = 0}); task.wait(0.8)
     end
 end)
 
--- Fullbright / Fog / FPS
-RunService.Heartbeat:Connect(function()
-    if CFG.Fullbright then
-        Lighting.Brightness = 3
-        Lighting.ClockTime = 12
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 1e6
-    end
-    if CFG.RemoveFog then
-        Lighting.FogEnd = 1e6
-        Lighting.FogStart = 0
-    end
-    if CFG.FPSBoost then
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
-                v.Enabled = false
-            end
-        end
-        settings().Rendering.QualityLevel = 1
-    end
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(28,28)
+Close.Position = UDim2.new(1,-40,0.5,-14)
+Close.BackgroundColor3 = C.Panel
+Close.Text = "×"; Close.TextColor3 = C.White
+Close.Font = FONT_BOLD; Close.TextSize = 20; Close.BorderSizePixel = 0
+Close.Parent = Bar; corner(Close, 6)
+Close.MouseEnter:Connect(function() tw(Close,0.15,{BackgroundColor3=C.White,TextColor3=C.Black}) end)
+Close.MouseLeave:Connect(function() tw(Close,0.15,{BackgroundColor3=C.Panel,TextColor3=C.White}) end)
+Close.MouseButton1Click:Connect(function()
+    tw(Win, 0.25, {Size = UDim2.fromOffset(0,0)})
+    task.delay(0.3, function() Gui:Destroy() end)
 end)
 
--- Hitbox Extender
-RunService.Heartbeat:Connect(function()
-    if CFG.HitboxExtender and HRP then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            local n = obj.Name:lower()
-            if (n:find("egg") or n:find("pet")) and obj:IsA("BasePart") then
-                obj.Size = Vector3.new(CFG.HitboxSize, CFG.HitboxSize, CFG.HitboxSize)
-                obj.Transparency = 0.5
-                obj.CanCollide = false
-            end
+-- ================= TAB BAR =================
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1,-28,0,32)
+TabBar.Position = UDim2.fromOffset(14,54)
+TabBar.BackgroundTransparency = 1
+TabBar.Parent = Win
+local TL = Instance.new("UIListLayout"); TL.FillDirection = Enum.FillDirection.Horizontal; TL.Padding = UDim.new(0,6); TL.Parent = TabBar
+
+-- ================= CONTENT =================
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1,-28,1,-104)
+Content.Position = UDim2.fromOffset(14,94)
+Content.BackgroundTransparency = 1; Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 3; Content.ScrollBarImageColor3 = C.Gray
+Content.CanvasSize = UDim2.new()
+Content.Parent = Win
+local CL = Instance.new("UIListLayout"); CL.Padding = UDim.new(0,8); CL.Parent = Content
+
+-- ================= NOTIF =================
+local NH = Instance.new("Frame")
+NH.Size = UDim2.fromOffset(240,320)
+NH.Position = UDim2.new(1,-252,0,54)
+NH.BackgroundTransparency = 1
+NH.Parent = Win
+local NL = Instance.new("UIListLayout"); NL.Padding = UDim.new(0,6); NL.Parent = NH
+
+local function Notify(msg)
+    local n = Instance.new("Frame")
+    n.Size = UDim2.new(1,0,0,30); n.BackgroundColor3 = C.Black
+    n.BackgroundTransparency = 1; n.BorderSizePixel = 0; n.Parent = NH
+    corner(n, 6)
+    local s = stroke(n, C.White, 1, 1)
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.new(1,-12,1,0); t.Position = UDim2.fromOffset(6,0)
+    t.BackgroundTransparency = 1; t.Text = msg
+    t.TextColor3 = C.White; t.Font = FONT_MED; t.TextSize = 10
+    t.TextXAlignment = Enum.TextXAlignment.Left; t.TextTransparency = 1
+    t.Parent = n
+    tw(n, 0.25, {BackgroundTransparency = 0})
+    tw(s, 0.25, {Transparency = 0.4})
+    tw(t, 0.25, {TextTransparency = 0})
+    task.delay(2.2, function()
+        tw(n, 0.3, {BackgroundTransparency = 1})
+        tw(s, 0.3, {Transparency = 1})
+        tw(t, 0.3, {TextTransparency = 1})
+        task.wait(0.35); n:Destroy()
+    end)
+end
+
+-- ================= TAB FACTORY =================
+local Tabs = {}
+local Active = nil
+
+local function Switch(name)
+    for _, t in pairs(Tabs) do
+        t.F.Visible = false; t.B.BackgroundColor3 = C.Panel; t.B.TextColor3 = C.Gray
+    end
+    local tab = Tabs[name]
+    tab.F.Visible = true
+    tab.B.BackgroundColor3 = C.White; tab.B.TextColor3 = C.Black
+    Active = name
+end
+
+local function MakeTab(name)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.fromOffset(110,30); b.BackgroundColor3 = C.Panel
+    b.Text = name; b.TextColor3 = C.Gray; b.Font = FONT_MED; b.TextSize = 10
+    b.BorderSizePixel = 0; b.AutoButtonColor = false; b.Parent = TabBar; corner(b, 6)
+    b.MouseEnter:Connect(function() if Active ~= name then tw(b,0.15,{BackgroundColor3=C.Dim,TextColor3=C.White}) end end)
+    b.MouseLeave:Connect(function() if Active ~= name then tw(b,0.15,{BackgroundColor3=C.Panel,TextColor3=C.Gray}) end end)
+    b.MouseButton1Click:Connect(function() Switch(name) end)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1,0,0,0); f.BackgroundTransparency = 1; f.Visible = false; f.Parent = Content
+    local fl = Instance.new("UIListLayout"); fl.Padding = UDim.new(0,8); fl.Parent = f
+    Tabs[name] = {B=b, F=f}
+    return Tabs[name]
+end
+
+-- ================= ROW FACTORY =================
+local function Section(p, label)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1,-8,0,16); f.BackgroundTransparency = 1; f.Parent = p
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.fromScale(1,1); t.BackgroundTransparency = 1
+    t.Text = "— " .. label .. " —"; t.TextColor3 = C.Dim
+    t.Font = FONT_BOLD; t.TextSize = 9; t.TextXAlignment = Enum.TextXAlignment.Left
+    t.Parent = f
+end
+
+local function Toggle(p, label, default, cb)
+    local r = Instance.new("Frame")
+    r.Size = UDim2.new(1,-8,0,34); r.BackgroundColor3 = C.Panel
+    r.BorderSizePixel = 0; r.Parent = p; corner(r, 6); stroke(r, C.Line, 1, 0.6)
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.new(1,-70,1,0); t.Position = UDim2.fromOffset(12,0)
+    t.BackgroundTransparency = 1; t.Text = label
+    t.TextColor3 = C.White; t.Font = FONT; t.TextSize = 11
+    t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = r
+    local pill = Instance.new("Frame")
+    pill.Size = UDim2.fromOffset(40,20); pill.Position = UDim2.new(1,-52,0.5,-10)
+    pill.BackgroundColor3 = C.Black; pill.BorderSizePixel = 0; pill.Parent = r
+    corner(pill, 10); stroke(pill, C.Line, 1, 0.3)
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.fromOffset(14,14); knob.Position = UDim2.fromOffset(3,3)
+    knob.BackgroundColor3 = C.Gray; knob.BorderSizePixel = 0; knob.Parent = pill
+    corner(knob, 7)
+    local st = default
+    local function render()
+        if st then
+            tw(pill, 0.18, {BackgroundColor3 = C.White})
+            tw(knob, 0.18, {Position = UDim2.fromOffset(23,3), BackgroundColor3 = C.Black})
+        else
+            tw(pill, 0.18, {BackgroundColor3 = C.Black})
+            tw(knob, 0.18, {Position = UDim2.fromOffset(3,3), BackgroundColor3 = C.Gray})
         end
     end
-end)
+    render()
+    pill.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            st = not st; render(); if cb then cb(st) end
+        end
+    end)
+end
 
--- ESP
-local espFolder = Instance.new("Folder", ScreenGui)
-espFolder.Name = "ESP"
-RunService.Heartbeat:Connect(function()
-    if CFG.ESP then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            local n = obj.Name:lower()
-            if (n:find("egg") or n:find("pet") or n:find("animal")) and obj:IsA("BasePart") then
-                local key = tostring(obj)
-                local label = espFolder:FindFirstChild(key)
-                if not label then
-                    label = Instance.new("BillboardGui", espFolder)
-                    label.Name = key
-                    label.Size = UDim2.new(0, 100, 0, 28)
-                    label.AlwaysOnTop = true
-                    label.Adornee = obj
-                    local txt = Instance.new("TextLabel", label)
-                    txt.Size = UDim2.new(1,0,1,0)
-                    txt.BackgroundTransparency = 1
-                    txt.Text = obj.Name
-                    txt.TextColor3 = CFG.ESPColor
-                    txt.TextStrokeTransparency = 0
-                    txt.Font = Enum.Font.GothamBold
-                    txt.TextSize = 12
+local function Button(p, label, cb)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1,-8,0,32); b.BackgroundColor3 = C.Panel
+    b.Text = label; b.TextColor3 = C.White; b.Font = FONT_MED; b.TextSize = 11
+    b.BorderSizePixel = 0; b.AutoButtonColor = false; b.Parent = p; corner(b, 6)
+    local s = stroke(b, C.Line, 1, 0.4)
+    b.MouseEnter:Connect(function() tw(b,0.15,{BackgroundColor3=C.White,TextColor3=C.Black}); tw(s,0.15,{Transparency=1}) end)
+    b.MouseLeave:Connect(function() tw(b,0.15,{BackgroundColor3=C.Panel,TextColor3=C.White}); tw(s,0.15,{Transparency=0.4}) end)
+    b.MouseButton1Click:Connect(function() if cb then cb() end end)
+end
+
+-- ================= TAB 1 : AUTO STEAL (PLACEHOLDER) =================
+local T1 = MakeTab("Auto Steal")
+Section(T1.F, "BREAK & GRAB")
+Toggle(T1.F, "Auto Break Egg", false, function(v)
+    Notify("Break Egg: " .. (v and "ON" or "OFF"))
+    -- [[ LOGIKA GAME: butuh nama RemoteEvent break dari eksplorasi ]]
+end)
+Toggle(T1.F, "Auto Ambil Hewan", false, function(v)
+    Notify("Ambil Hewan: " .. (v and "ON" or "OFF"))
+    -- [[ LOGIKA GAME: butuh nama ProximityPrompt / remote take ]]
+end)
+Toggle(T1.F, "Auto Safe Zone", false, function(v)
+    Notify("Safe Zone: " .. (v and "ON" or "OFF"))
+    -- [[ LOGIKA GAME: butuh CFrame safe zone dari Workspace ]]
+end)
+Toggle(T1.F, "Anti Security", false, function(v)
+    Notify("Anti Security: " .. (v and "ON" or "OFF"))
+    -- [[ LOGIKA GAME: butuh nama NPC guardian & logika jarak ]]
+end)
+Section(T1.F, "EKSEKUSI")
+Button(T1.F, "▶  MULAI LOOP", function() Notify("Loop dimulai — isi logika game dulu") end)
+Button(T1.F, "■  STOP LOOP", function() Notify("Loop dihentikan") end)
+
+-- ================= TAB 2 : MOVEMENT (BERFUNGSI) =================
+local T2 = MakeTab("Movement")
+Section(T2.F, "GERAKAN")
+Toggle(T2.F, "Speed Boost (60)", false, function(v)
+    Notify("Speed: " .. (v and "ON" or "OFF"))
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid")
+    hum.WalkSpeed = v and 60 or 16
+end)
+local noclipConn = nil
+Toggle(T2.F, "Noclip", false, function(v)
+    Notify("Noclip: " .. (v and "ON" or "OFF"))
+    if v then
+        noclipConn = RunService.Stepped:Connect(function()
+            local c = LocalPlayer.Character
+            if c then
+                for _, p in ipairs(c:GetDescendants()) do
+                    if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end
                 end
             end
-        end
+        end)
     else
-        for _, v in pairs(espFolder:GetChildren()) do v:Destroy() end
+        if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
+    end
+end)
+Toggle(T2.F, "Anti AFK", false, function(v)
+    Notify("Anti AFK: " .. (v and "ON" or "OFF"))
+    if v then
+        LocalPlayer.Idled:Connect(function()
+            local vu = game:GetService("VirtualUser")
+            vu:CaptureController()
+            vu:ClickButton2(Vector2.new())
+        end)
     end
 end)
 
-notify("v4.0 ULTRA loaded. Semua fitur siap.")
+-- ================= TAB 3 : INFO =================
+local T3 = MakeTab("Info")
+Section(T3.F, "SESSION")
+local info = Instance.new("TextLabel")
+info.Size = UDim2.new(1,-8,0,120)
+info.BackgroundColor3 = C.Panel
+info.Text = "Executor : OK\nPlaceId  : " .. tostring(game.PlaceId) .. "\nJobId    : " .. string.sub(tostring(game.JobId),1,16) .. "…\nMode     : OWNER\n\nFitur Movement berfungsi.\nAuto Steal butuh isi\n[[ LOGIKA GAME ]] manual."
+info.TextColor3 = C.Gray; info.Font = FONT; info.TextSize = 10
+info.TextXAlignment = Enum.TextXAlignment.Left; info.TextYAlignment = Enum.TextYAlignment.Top
+info.TextWrapped = true; info.Parent = T3.F; corner(info, 6)
+local pad = Instance.new("UIPadding")
+pad.PaddingLeft = UDim.new(0,10); pad.PaddingTop = UDim.new(0,10)
+pad.Parent = info
+
+Section(T3.F, "PANEL")
+Button(T3.F, "Reset Posisi Window", function()
+    tw(Win, 0.3, {Position = UDim2.new(0.5,-280,0.5,-210)})
+    Notify("Window direset")
+end)
+Button(T3.F, "Tutup Panel", function()
+    tw(Win, 0.25, {Size = UDim2.fromOffset(0,0)})
+    task.delay(0.3, function() Gui:Destroy() end)
+end)
+
+-- ================= BOOT =================
+Switch("Auto Steal")
+task.delay(0.4, function() Notify("OWNER mode aktif") end)
+
+CL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Content.CanvasSize = UDim2.new(0,0,0,CL.AbsoluteContentSize.Y + 20)
+end)
